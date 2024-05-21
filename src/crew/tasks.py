@@ -1,6 +1,7 @@
 from crewai import Task
 from textwrap import dedent
 
+
 class EmailFilterTasks:
 	def filter_emails_task(self, agent, emails):
 		return Task(

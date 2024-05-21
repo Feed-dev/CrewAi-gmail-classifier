@@ -1,11 +1,11 @@
 from dotenv import load_dotenv
-load_dotenv()
-
 from langgraph.graph import StateGraph
-
 from .state import EmailsState
 from .nodes import Nodes
 from .crew.crew import EmailFilterCrew
+
+load_dotenv()
+
 
 class WorkFlow():
 	def __init__(self):

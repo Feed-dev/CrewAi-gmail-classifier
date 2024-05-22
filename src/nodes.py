@@ -45,3 +45,24 @@ class Nodes():
 		else:
 			print("## New emails")
 			return "continue"
+
+	def categorize_complaints(self, state):
+		print("# Categorizing complaint emails")
+		complaint_emails = [email for email in state['emails'] if 'complaint' in email['snippet'].lower()]
+		return {**state, "complaint_emails": complaint_emails}
+
+	def summarize_complaints(self, state):
+		print("# Summarizing complaint emails")
+		summaries = []
+		for email in state['complaint_emails']:
+			# Placeholder summarization logic
+			summary = f"Summary of complaint: {email['snippet'][:100]}"
+			summaries.append(summary)
+		return {**state, "summaries": summaries}
+
+	def save_summaries(self, state):
+		print("# Saving summaries to file")
+		with open('complaints_summaries.txt', 'a') as file:
+			for summary in state['summaries']:
+				file.write(f"{summary}\n")
+		return state

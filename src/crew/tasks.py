@@ -67,3 +67,46 @@ class EmailFilterTasks:
 				"""),
 			agent=agent
 		)
+
+	def categorize_complaints_task(self, agent, emails):
+		return Task(
+			description=dedent(f"""\
+	            Analyze the following emails and categorize those that contain customer complaints.
+
+	            EMAILS
+	            -------
+	            {emails}
+
+	            Your final answer MUST include the categorized complaint emails."""),
+			agent=agent
+		)
+
+	def summarize_complaints_task(self, agent, complaints):
+		return Task(
+			description=dedent(f"""\
+	            Summarize the contents of the following complaint emails.
+
+	            COMPLAINT EMAILS
+	            -------
+	            {complaints}
+
+	            Your final answer MUST include the summaries of the complaints."""),
+			agent=agent
+		)
+
+	def compare_complaints_task(self, agent, new_complaints, existing_complaints):
+		return Task(
+			description=dedent(f"""\
+	            Compare the new complaints against existing complaints and count the number of similar complaints.
+
+	            NEW COMPLAINTS
+	            -------
+	            {new_complaints}
+
+	            EXISTING COMPLAINTS
+	            -------
+	            {existing_complaints}
+
+	            Your final answer MUST include the updated complaint counts and any new complaints."""),
+			agent=agent
+		)

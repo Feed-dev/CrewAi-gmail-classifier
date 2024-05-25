@@ -2,3 +2,5 @@ __pycache__
 .env
 credentials.json
 token.json
+.idea/
+.venv/

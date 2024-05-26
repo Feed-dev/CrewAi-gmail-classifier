@@ -1,9 +1,12 @@
+import os
 from langchain_community.agent_toolkits import GmailToolkit
 from langchain_community.tools.gmail.get_thread import GmailGetThread
 from langchain_community.tools.tavily_search import TavilySearchResults
 from textwrap import dedent
 from crewai import Agent
 from .tools import CreateDraftTool
+
+os.environ["OPENAI_MODEL_NAME"]="gpt-4o"
 
 
 class EmailFilterAgents():

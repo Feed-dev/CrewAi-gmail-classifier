@@ -1,4 +1,6 @@
-__pycache__
+__pycache__/
+*.py[cod]
+*$py.class
 .env
 credentials.json
 token.json

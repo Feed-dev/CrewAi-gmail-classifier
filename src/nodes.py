@@ -8,6 +8,7 @@ from googleapiclient.errors import HttpError
 
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 
+
 class Nodes():
     def __init__(self):
         self.creds = None

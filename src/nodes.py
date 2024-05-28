@@ -33,7 +33,10 @@ class Nodes():
             query = "newer_than:1d"
             results = service.users().messages().list(userId="me", q=query).execute()
             messages = results.get('messages', [])
+            print(f"Retrieved {len(messages)} messages")  # Debug statement
+
             checked_emails = state.get('checked_emails_ids', [])
+            print(f"Previously checked emails: {checked_emails}")  # Debug statement
             thread = []
             new_emails = []
             for msg in messages:
@@ -46,6 +49,7 @@ class Nodes():
                     if header['name'] == 'From':
                         sender = header['value']
                         break
+                print(f"Processing email from {sender} with snippet: {snippet}")  # Debug statement
                 if (msg_id not in checked_emails) and (thread_id not in thread) and ('feeddev75@gmail.com' not in sender):
                     thread.append(thread_id)
                     new_emails.append(
@@ -57,6 +61,7 @@ class Nodes():
                         }
                     )
             checked_emails.extend([msg['id'] for msg in messages])
+            print(f"New emails: {new_emails}")  # Debug statement
             return {
                 **state,
                 "emails": new_emails,
@@ -82,6 +87,7 @@ class Nodes():
     def categorize_complaints(self, state):
         print("# Categorizing complaint emails")
         complaint_emails = [email for email in state['emails'] if 'complaint' in email['snippet'].lower()]
+        print(f"Categorized complaints: {complaint_emails}")  # Debug statement
         return {**state, "complaint_emails": complaint_emails}
 
     def summarize_complaints(self, state):
@@ -90,6 +96,7 @@ class Nodes():
         for email in state['complaint_emails']:
             summary = f"Summary of complaint: {email['snippet'][:100]}"
             summaries.append(summary)
+        print(f"Summaries: {summaries}")  # Debug statement
         return {**state, "summaries": summaries}
 
     def save_summaries(self, state):
@@ -97,4 +104,5 @@ class Nodes():
         with open('complaints_summaries.txt', 'a') as file:
             for summary in state['summaries']:
                 file.write(f"{summary}\n")
+        print("Summaries saved to file")  # Debug statement
         return state

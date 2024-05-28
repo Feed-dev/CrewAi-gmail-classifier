@@ -9,5 +9,4 @@ if __name__ == "__main__":
         "complaint_emails": [],
         "summaries": []
     }
-    while True:
-        app.invoke(initial_state)
+    app.invoke(initial_state)

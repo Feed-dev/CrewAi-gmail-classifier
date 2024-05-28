@@ -1,68 +1,99 @@
 import os
 import time
-from langchain_community.agent_toolkits import GmailToolkit
-from langchain_community.tools.gmail.search import GmailSearch
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 
+SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 
 class Nodes():
-	def __init__(self):
-		self.gmail = GmailToolkit()
+    def __init__(self):
+        self.creds = None
+        self.authenticate_gmail_api()
 
-	def check_email(self, state):
-		print("# Checking for new emails")
-		search = GmailSearch(api_resource=self.gmail.api_resource)
-		emails = search('after:newer_than:1d')
-		checked_emails = state['checked_emails_ids'] if state['checked_emails_ids'] else []
-		thread = []
-		new_emails = []
-		for email in emails:
-			if (email['id'] not in checked_emails) and (email['threadId'] not in thread) and ( os.environ['MY_EMAIL'] not in email['sender']):
-				thread.append(email['threadId'])
-				new_emails.append(
-					{
-						"id": email['id'],
-						"threadId": email['threadId'],
-						"snippet": email['snippet'],
-						"sender": email["sender"]
-					}
-				)
-		checked_emails.extend([email['id'] for email in emails])
-		return {
-			**state,
-			"emails": new_emails,
-			"checked_emails_ids": checked_emails
-		}
+    def authenticate_gmail_api(self):
+        if os.path.exists("token.json"):
+            self.creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+        if not self.creds or not self.creds.valid:
+            if self.creds and self.creds.expired and self.creds.refresh_token:
+                self.creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
+                self.creds = flow.run_local_server(port=0)
+            with open("token.json", "w") as token:
+                token.write(self.creds.to_json())
 
-	def wait_next_run(self, state):
-		print("## Waiting for 180 seconds")
-		time.sleep(180)
-		return state
+    def check_email(self, state):
+        print("# Checking for new emails")
+        try:
+            service = build("gmail", "v1", credentials=self.creds)
+            query = "newer_than:1d"
+            results = service.users().messages().list(userId="me", q=query).execute()
+            messages = results.get('messages', [])
+            checked_emails = state.get('checked_emails_ids', [])
+            thread = []
+            new_emails = []
+            for msg in messages:
+                msg_id = msg['id']
+                msg_detail = service.users().messages().get(userId="me", id=msg_id).execute()
+                thread_id = msg_detail['threadId']
+                snippet = msg_detail['snippet']
+                sender = None
+                for header in msg_detail['payload']['headers']:
+                    if header['name'] == 'From':
+                        sender = header['value']
+                        break
+                if (msg_id not in checked_emails) and (thread_id not in thread) and ('feeddev75@gmail.com' not in sender):
+                    thread.append(thread_id)
+                    new_emails.append(
+                        {
+                            "id": msg_id,
+                            "threadId": thread_id,
+                            "snippet": snippet,
+                            "sender": sender
+                        }
+                    )
+            checked_emails.extend([msg['id'] for msg in messages])
+            return {
+                **state,
+                "emails": new_emails,
+                "checked_emails_ids": checked_emails
+            }
+        except HttpError as error:
+            print(f"An error occurred: {error}")
+            return state
 
-	def new_emails(self, state):
-		if len(state['emails']) == 0:
-			print("## No new emails")
-			return "end"
-		else:
-			print("## New emails")
-			return "continue"
+    def wait_next_run(self, state):
+        print("## Waiting for 180 seconds")
+        time.sleep(180)
+        return state
 
-	def categorize_complaints(self, state):
-		print("# Categorizing complaint emails")
-		complaint_emails = [email for email in state['emails'] if 'complaint' in email['snippet'].lower()]
-		return {**state, "complaint_emails": complaint_emails}
+    def new_emails(self, state):
+        if len(state['emails']) == 0:
+            print("## No new emails")
+            return "end"
+        else:
+            print("## New emails")
+            return "continue"
 
-	def summarize_complaints(self, state):
-		print("# Summarizing complaint emails")
-		summaries = []
-		for email in state['complaint_emails']:
-			# Placeholder summarization logic
-			summary = f"Summary of complaint: {email['snippet'][:100]}"
-			summaries.append(summary)
-		return {**state, "summaries": summaries}
+    def categorize_complaints(self, state):
+        print("# Categorizing complaint emails")
+        complaint_emails = [email for email in state['emails'] if 'complaint' in email['snippet'].lower()]
+        return {**state, "complaint_emails": complaint_emails}
 
-	def save_summaries(self, state):
-		print("# Saving summaries to file")
-		with open('complaints_summaries.txt', 'a') as file:
-			for summary in state['summaries']:
-				file.write(f"{summary}\n")
-		return state
+    def summarize_complaints(self, state):
+        print("# Summarizing complaint emails")
+        summaries = []
+        for email in state['complaint_emails']:
+            summary = f"Summary of complaint: {email['snippet'][:100]}"
+            summaries.append(summary)
+        return {**state, "summaries": summaries}
+
+    def save_summaries(self, state):
+        print("# Saving summaries to file")
+        with open('complaints_summaries.txt', 'a') as file:
+            for summary in state['summaries']:
+                file.write(f"{summary}\n")
+        return state

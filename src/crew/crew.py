@@ -35,7 +35,8 @@ class EmailFilterCrew():
                 tasks.compare_complaints_task(self.complaint_comparison, state['complaint_emails'],
                                               self.load_existing_complaints())
             ],
-            verbose=True
+            verbose=2,
+            memory=True
         )
         result = crew.kickoff()
         return {**state, "action_required_emails": result}
